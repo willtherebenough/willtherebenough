@@ -1,0 +1,35 @@
+name: live_translate
+description: Live speech translation client for a self-hosted server.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Native mic capture. Uses AudioRecord on Android, so this is a real
+  # audio stream, not a webview. Requires minSdk 23 — see BUILD_ANDROID.md.
+  record: ^7.1.1
+
+  # WebSocket transport to the server.
+  web_socket_channel: ^3.0.1
+
+  # Plain HTTP for the /health preflight check.
+  http: ^1.2.2
+
+  # Remembers the server address and language choices.
+  shared_preferences: ^2.3.2
+
+  # Keeps the screen on while listening. A sleeping screen drops the socket.
+  wakelock_plus: ^1.2.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

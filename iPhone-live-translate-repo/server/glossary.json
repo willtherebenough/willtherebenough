@@ -1,0 +1,34 @@
+{
+  "_comment": [
+    "Reloaded automatically whenever this file changes — edit it while the",
+    "server is running and the next sentence picks it up.",
+    "",
+    "terms: handed to Whisper as an expectation of what it's about to hear.",
+    "  Use it for names, places, jargon, and regional words it mishears.",
+    "  Whisper caps the prompt near 224 tokens, so a focused list of 20-60",
+    "  beats an exhaustive one — a long list dilutes the bias.",
+    "",
+    "replacements: applied to the translation after the fact, keyed by target",
+    "  language. Use it for terms the translator renders wrongly every time,",
+    "  regardless of context. Whole-word, case-insensitive."
+  ],
+
+  "terms": [
+    "Guadalajara",
+    "chamba",
+    "órale",
+    "ahorita",
+    "platicar",
+    "wey"
+  ],
+
+  "replacements": {
+    "en": {
+      "job site": "workplace",
+      "little now": "in a moment"
+    },
+    "es": {
+      "ordenador": "computadora"
+    }
+  }
+}

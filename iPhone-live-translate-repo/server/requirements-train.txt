@@ -1,0 +1,6 @@
+# Only needed for finetune_whisper.py, not for running the server.
+# Install after requirements-torch.txt and requirements.txt.
+
+peft>=0.13
+datasets>=3.0
+jiwer>=3.0

@@ -1,0 +1,23 @@
+# Install requirements-torch.txt FIRST. See the notes in that file.
+#
+#     pip install -r requirements-torch.txt
+#     pip install -r requirements.txt
+#
+# torch and torchaudio are deliberately absent here. silero-vad depends on
+# both, and letting pip resolve them from PyPI gives you a CPU-only torch and
+# a torchaudio that won't load.
+#
+# main.py does not actually import torchaudio — it reads the Silero VAD model
+# file directly. It's pinned only to stop pip installing a broken one.
+
+fastapi>=0.115
+uvicorn[standard]>=0.32
+websockets>=13.0
+numpy>=1.26
+transformers>=4.44
+accelerate>=0.34
+sentencepiece>=0.2.0
+silero-vad>=5.1
+
+# For test_client.py only (streams your PC mic to the server):
+# pip install sounddevice
