@@ -1,0 +1,125 @@
+# Codemagic builds the iOS app only. Android is built locally in Android
+# Studio, so nothing here touches it.
+#
+# This file must sit at the ROOT of the repository. Set `working_directory`
+# below to the folder containing pubspec.yaml.
+#
+# Two workflows:
+#   ios-unsigned    No Apple account needed. Produces an IPA you sideload with
+#                   AltStore from your Windows PC. Start here.
+#   ios-testflight  Needs a paid Apple Developer account. Uploads to
+#                   TestFlight, which installs cleanly and lasts 90 days.
+#
+# The iOS project itself is generated during the build by ci/prepare_ios.sh,
+# so there is no ios/ folder to commit and nothing about it needs a Mac to
+# change.
+
+workflows:
+
+  # ---------------------------------------------------------------------
+  # No Apple account. Sideload the result with AltStore, whose AltServer
+  # runs on Windows. Apps expire after 7 days and need re-signing, and a
+  # free Apple ID allows three sideloaded apps at a time.
+  # ---------------------------------------------------------------------
+  ios-unsigned:
+    name: iOS unsigned (AltStore)
+    working_directory: app          # <-- folder containing pubspec.yaml
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        ORG: com.kda               # <-- must match the --org you used
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Prepare the iOS project
+        script: bash "$CM_BUILD_DIR/ci/prepare_ios.sh"
+
+      - name: Build without signing
+        script: flutter build ios --release --no-codesign
+
+      - name: Package as IPA
+        script: |
+          # An .ipa is a zip with the .app inside a Payload folder. Xcode
+          # normally does this as part of signing, which we skipped.
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r --symlinks "$CM_BUILD_DIR/live-translate-unsigned.ipa" Payload
+
+    artifacts:
+      - live-translate-unsigned.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      email:
+        recipients:
+          - your@email.address     # <-- IPA arrives as an attachment
+        notify:
+          success: true
+          failure: true
+
+  # ---------------------------------------------------------------------
+  # Paid Apple Developer account. Before this runs you need, in Codemagic:
+  #   1. An App Store Connect API key under Teams > Integrations.
+  #   2. The bundle identifier registered in your Apple Developer account.
+  #
+  # Triggers on tags rather than pushes, so iOS builds are cut deliberately
+  # instead of spending Mac minutes on every commit.
+  # ---------------------------------------------------------------------
+  ios-testflight:
+    name: iOS TestFlight
+    working_directory: app
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: codemagic  # <-- name of your key in Codemagic
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        ORG: com.kda
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.kda.liveTranslate   # <-- yours
+    triggering:
+      events:
+        - tag
+    scripts:
+      - name: Prepare the iOS project
+        script: bash "$CM_BUILD_DIR/ci/prepare_ios.sh"
+
+      - name: Build a signed IPA
+        script: |
+          # App Store Connect rejects a build number it has seen before, and
+          # the number in pubspec.yaml will not have moved.
+          BUILD=$(($(app-store-connect get-latest-testflight-build-number \
+            "$APP_APPLE_ID" 2>/dev/null || echo 0) + 1))
+          echo "Building as build number $BUILD"
+          flutter build ipa --release \
+            --build-name=1.0.0 \
+            --build-number=$BUILD \
+            --export-options-plist=/Users/builder/export_options.plist
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+      email:
+        recipients:
+          - your@email.address
+        notify:
+          success: true
+          failure: true
